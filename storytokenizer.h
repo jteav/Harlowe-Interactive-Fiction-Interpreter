@@ -3,6 +3,10 @@
 #define __STORYTOKENIZER_H
 
 #include <string>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <unordered_map>
 using namespace std;
 
 enum section_t {LINK, GOTO, SET, IF, ELSEIF, ELSE, BLOCK, TEXT};
@@ -27,21 +31,8 @@ const string PASSAGE_NAME_END = "\"";
 const string GOTO_NAME_START = "&quot;";
 const string GOTO_NAME_END = "&quot;";
 
-class PassageToken
-{
-private:
-  string pass;
-  string name;
-public:
-  PassageToken() {}
-  PassageToken(const string& str) : pass(str) {}
-  PassageToken(const string& n, const string& p) : name(n), pass(p) {}
-  const string& getName() const {return name;}
-  const string& getText() const {return pass;}
-};
-
-class SectionToken
-{
+//SectionToken contains information on the section.
+class SectionToken{
 private:
   string text;
   section_t type;
@@ -52,8 +43,8 @@ public:
   const string& getText() const {return text;}
 };
 
-class PassageTokenizer
-{
+//PassageTokenizer breaks up the passages into SectionTokens.
+class PassageTokenizer{
 private:
   string pass;
   unsigned int pos;
@@ -65,8 +56,27 @@ public:
   SectionToken nextSection();
 };
 
-class StoryTokenizer
-{
+//PassageToken contains information on each passage.
+class PassageToken{
+private:
+  string pass;
+  string name;
+  PassageTokenizer *pt;
+public:
+  PassageToken() {addSections();}
+  PassageToken(const string& str) : pass(str) {addSections();}
+  PassageToken(const string& n, const string& p) : name(n), pass(p) {addSections();}
+  const string& getName() const {return name;}
+  const string& getText() const {return pass;}
+  void addSections();
+  void addLinks(SectionToken stok);
+  
+  vector<SectionToken> sections;
+  vector<string> links;
+};
+
+//StoryTokenizer breaks up the story into PassageTokens.
+class StoryTokenizer{
 private:
   string story;
   unsigned int pos;
@@ -75,6 +85,21 @@ public:
   StoryTokenizer(const string& s) : story(s), pos(0) {}
   bool hasNextPassage() const;
   PassageToken nextPassage();
+};
+
+//The main class that starts everything.
+class Story{
+private:
+  string story;
+  unordered_map<string, PassageToken> passages;
+  unordered_map<string, bool> variables;
+public:
+  Story(string text) {story = text;}
+  void setVariable(SectionToken stok);
+  bool ifSection(SectionToken stok);
+  void block(string stok);
+  void setUp();
+  void play(int in);
 };
 
 #endif
